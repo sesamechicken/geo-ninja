@@ -1,0 +1,47 @@
+html { height: 100% }
+body { 
+  height: 100%; 
+  margin: 0; 
+  padding: 0;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+  font-weight: 300;
+}
+#wrapper{ position: relative; height: 100%}
+.controls{ 
+  background-color: #f9f9f9; 
+  padding: 0.5em 0; 
+  color: #666; 
+  position: fixed; 
+  bottom: 0; 
+  left: 0; 
+  z-index: 99;
+  opacity: .89;
+  border-radius: 0 7px 0 0;
+  width: 100%;
+  text-align: center;
+}
+.tracking{ 
+  background-color: #0066FF; 
+  padding: 0.5em; 
+  color: #fff; 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  z-index: 99;
+  opacity: .89;
+}
+#map-canvas { height: 100%; background-color: #000;}
+
+.success{
+  background-color: green;
+  color: #fff;
+  padding: .4em 0;
+}
+
+input[type=email], input[type=text]{
+  padding: 0.5em;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+button {
+  padding: 0.5em;
+}

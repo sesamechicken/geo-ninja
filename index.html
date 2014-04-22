@@ -1,80 +1,214 @@
 <!DOCTYPE HTML>
 <head>
-  <title>ninja</title>
-  <link type="text/css" rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css" />
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAstJmdJy_2z18aTjjVLMS8H0TqZ-0Fueo&sensor=true"
-  type="text/javascript"></script>
-  <style type="text/css">
-  html { height: 100% }
-  body { height: 100%; margin: 0; padding: 0 }
-  #map-canvas { height: 100% }
-</style>
+<title>geo-ninja</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAstJmdJy_2z18aTjjVLMS8H0TqZ-0Fueo&sensor=true"
+type="text/javascript"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="css/app.css">
 
 <script type="text/javascript">
 var watchID;
 var geoLoc;
+var map;
+var mapOptions;
+var tracking_marker;
+var my_marker;
+var my_latlng;
+var tracker_lat = "";
+var tracker_lng = "";
+var tracker_user = "";
+var tracker_id;
 
 
+function app_init(){
 
-function loadMap(lat, lng) {
-  var myLatlng = new google.maps.LatLng(lat,lng);
-  var mapOptions = {
-    zoom: 14,
-    center: myLatlng
+  tracker_lat = getQueryVariable('lat');
+  tracker_lng = getQueryVariable('lng');
+  tracker_user = getQueryVariable('user');
+  tracker_id = getQueryVariable('id');
+/*
+  // Hardcode for testing
+  tracker_lat = 48.858093;
+  tracker_lng = 2.294694;
+  tracker_user = 'sesamechicken';
+
+  
+*/
+
+  // IF TRACKER, OTHERWISE MY POSITION
+  if(tracker_lat != "" && tracker_lng != "" && tracker_user != "" && tracker_id != ""){
+    console.log('tracker = true');
+    
+    tracker_name = document.getElementById('tracker_name');
+    tracker_name.innerHTML = tracker_user;
+
+    tracker_latlng = new google.maps.LatLng(tracker_lat, tracker_lng);
+    mapOptions = {
+      zoom: 16,
+      center: tracker_latlng
+    }
+
+    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+    tracking_marker = new google.maps.Marker({
+      position: tracker_latlng,
+      title: 'Tracker'
+    });
+    tracking_marker.setMap(map);
+
+    tracker_int = setInterval(function(){
+      pollTracker(tracker_id);
+    }, 5000);
+
   }
-  var map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+  else{
+    // MY POSITION - NO TRACKER
+    console.log('tracker = false');
+    var options = {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 10000
+    };
+    navigator.geolocation.getCurrentPosition(showCurrentUserPosition, errorHandler, options);
+  }
 
-  var marker = new google.maps.Marker({
-      position: myLatlng,
-      title:"Current location (best guess)"
-  });
+  // Mostly for testing
+  /* 
+  console.log('should set in 5 secs');
+  new_lat = 48.858899;
+  new_lng = 2.296926;
+  var timer = setTimeout(function(){
+    moveMarker(new_lat, new_lng)
+  }, 5000);
+  */
+}
 
-  // To add the marker to the map, call setMap();
-  marker.setMap(map);
+// END app_init
+
+
+// Called from app_init if nobody to track
+function showCurrentUserPosition(pos){
+  my_lat = pos.coords.latitude;
+  my_lng = pos.coords.longitude;
+
+  my_latlng = new google.maps.LatLng(my_lat, my_lng);
+    mapOptions = {
+      zoom: 16,
+      center: my_latlng
+    }
+
+    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+    my_marker = new google.maps.Marker({
+      position: my_latlng,
+      title: 'My location (approx)'
+    });
+    my_marker.setMap(map);
 }
 
 
 
+// For polling the tracker's beacon from the db
+function pollTracker (tracker_id) {
+  $.get('ajax/poll_tracker.php', {id: tracker_id}, function(data){
+    // success
 
-function showLocation(position) {
+  });
+  
+}
+
+
+// ```````` For sending out my tracked position to server ```````````
+
+function sendLocation(position){
+  // position obj hold the key...
   var latitude = position.coords.latitude;
   var longitude = position.coords.longitude;
-  console.log('getting ready...');
 
-  loadMap(latitude, longitude);
-  //alert("Latitude : " + latitude + " Longitude: " + longitude);
+  
+
+  // Keep updating the db with my coords
+  //$.post('ajax/post_coords.php', {lat: , lng: , user: }, function(data){
+    // on success
+    // 
+ // });
+
 }
 
-function errorHandler(err) {
-  if(err.code == 1) {
-    alert("Error: Access is denied!");
-  }else if( err.code == 2) {
-    alert("Error: Position is unavailable!");
-  }
+// Fired after button clicked
+function shareLocation(){
+  // Get email to send to
+  recip = document.getElementById('recip').value;
+  console.log(recip);
+
+  $('#share-frm').slideUp();
+  $('#sts').addClass('success').html('Invite sent!').slideDown(200).delay(2000).slideUp(200);
+  // Send first set of datapoints to server
+  //$.post('ajax/share_location.php', {lat: my_lat, lng: my_lng, user: username}, function(data){
+    // on success, fire the watcher which will trigger the updater
+    // getLocationUpdate();
+  //});
+
+
 }
+
+
 function getLocationUpdate(){
-
    if(navigator.geolocation){
       // timeout at 60000 milliseconds (60 seconds)
-      var options = {timeout:60000};
+      var options = {
+        timeout: 60000,
+        maximumAge: 5000
+      };
+     
       geoLoc = navigator.geolocation;
-      watchID = geoLoc.watchPosition(showLocation, 
-                                     errorHandler,
-                                     options);
+     
+      watchID = geoLoc.watchPosition(sendLocation, errorHandler, options);
+
    }else{
       alert("Sorry, browser does not support geolocation!");
    }
 }
+
+
+function setName(){
+  $('#identity-frm').slideUp(200);
+  $('#share-frm').slideDown(200);
+  username = $('#username').val();
+}
+
+
 </script>
 </head>
 <html>
-<body>
-   <form>
+<body onload="app_init()">
 
-    <div id="map-canvas" style="width: 100%; height: 500px;">foo</div>
-     <input type="button" onclick="getLocationUpdate();"  
-                             value="Watch Update"/>
-   </form>
-  <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js" ></script>
+<div id="wrapper">
+
+
+  <div id="map-canvas">Loading map...</div>
+  <div class="tracking">
+   Tracking: <em id="tracker_name">You</em>
+  </div>
+  
+  <div class="controls">
+
+    <div id="identity-frm">
+      <input type="text" name="username" id="username" placeholder="Your name" autofocus> 
+      <button onclick="setName()">Set name</button>
+    </div>
+    <div id="share-frm" style="display:none;">
+      <input type="email" name="recip" id="recip" placeholder="email@example.com" autofocus> 
+      <button onclick="shareLocation()">Share location</button>
+    </div>
+    <div id="sts" style="display: none;"></div>
+  </div>
+
+</div>
+
+
+<script type="text/javascript" src="js/app.js"></script>
 </body>
 </html>
