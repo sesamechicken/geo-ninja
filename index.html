@@ -2,7 +2,12 @@
 <head>
 <title>geo-ninja</title>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-startup-image" href="http://project107.net/geo-ninja/img/ios-startup.png">
+<link rel="apple-touch-icon" sizes="114x114" href="http://project107.net/geo-ninja/img/touch-icon-iphone4.png" />
+
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAstJmdJy_2z18aTjjVLMS8H0TqZ-0Fueo&sensor=true"
 type="text/javascript"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
@@ -112,9 +117,11 @@ function showCurrentUserPosition(pos){
 
 // For polling the tracker's beacon from the db
 function pollTracker (tracker_id) {
-  $.get('ajax/poll_tracker.php', {id: tracker_id}, function(data){
+  $.get('ajax/poll_tracker.php', {session_key: tracker_id}, function(data){
     // success
-
+    console.log(data);
+    tracker_obj = jQuery.parseJSON(data);
+    moveMarker(tracking_marker, true, tracker_obj.lat, tracker_obj.lng);
   });
   
 }
@@ -123,17 +130,16 @@ function pollTracker (tracker_id) {
 // ```````` For sending out my tracked position to server ```````````
 
 function sendLocation(position){
-  // position obj hold the key...
+  // position obj holds the key...
   var latitude = position.coords.latitude;
   var longitude = position.coords.longitude;
 
-  
-
   // Keep updating the db with my coords
-  //$.post('ajax/post_coords.php', {lat: , lng: , user: }, function(data){
+  $.post('ajax/post_coords.php', {lat: latitude, lng: longitude, session_key: obj.session_key, user: username}, function(data){
     // on success
-    // 
- // });
+    $('#sts').removeClass("success").html('Position sent ok.').slideDown(200).delay(2000).slideUp(100);
+    moveMarker(my_marker, true, latitude, longitude);
+  });
 
 }
 
@@ -146,10 +152,13 @@ function shareLocation(){
   $('#share-frm').slideUp();
   $('#sts').addClass('success').html('Invite sent!').slideDown(200).delay(2000).slideUp(200);
   // Send first set of datapoints to server
-  //$.post('ajax/share_location.php', {lat: my_lat, lng: my_lng, user: username}, function(data){
+  $.post('ajax/share_location.php', {lat: my_lat, lng: my_lng, user: username, recip: recip}, function(data){
     // on success, fire the watcher which will trigger the updater
-    // getLocationUpdate();
-  //});
+    // console.log(data);
+    obj = jQuery.parseJSON(data);
+    // console.log(obj);
+    getLocationUpdate();
+  });
 
 
 }
@@ -162,11 +171,8 @@ function getLocationUpdate(){
         timeout: 60000,
         maximumAge: 5000
       };
-     
       geoLoc = navigator.geolocation;
-     
       watchID = geoLoc.watchPosition(sendLocation, errorHandler, options);
-
    }else{
       alert("Sorry, browser does not support geolocation!");
    }
@@ -177,6 +183,7 @@ function setName(){
   $('#identity-frm').slideUp(200);
   $('#share-frm').slideDown(200);
   username = $('#username').val();
+  $('#tracker_name').html(username + ' (you)');
 }
 
 
