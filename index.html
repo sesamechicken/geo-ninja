@@ -119,7 +119,13 @@ function showCurrentUserPosition(pos){
 function pollTracker (tracker_id) {
   $.get('ajax/poll_tracker.php', {session_key: tracker_id}, function(data){
     // success
+<<<<<<< HEAD
     console.log(data);
+=======
+
+    console.log(data);
+
+>>>>>>> e483bd935f649a7ea8f067752993261577039cea
     tracker_obj = jQuery.parseJSON(data);
     moveMarker(tracking_marker, true, tracker_obj.lat, tracker_obj.lng);
   });
