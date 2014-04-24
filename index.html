@@ -38,35 +38,41 @@ function app_init(){
   tracker_lat = 48.858093;
   tracker_lng = 2.294694;
   tracker_user = 'sesamechicken';
-
-  
 */
 
   // IF TRACKER, OTHERWISE MY POSITION
-  if(tracker_lat != "" && tracker_lng != "" && tracker_user != "" && tracker_id != ""){
-    console.log('tracker = true');
-    
-    tracker_name = document.getElementById('tracker_name');
-    tracker_name.innerHTML = tracker_user;
+  if(tracker_id != ""){
+    // Grab the actual most-recent data per session ID
+    $.get('ajax/poll_tracker.php', {session_key: tracker_id}, function(data){
+      // success      
+      init_tracker_obj = jQuery.parseJSON(data);
 
-    tracker_latlng = new google.maps.LatLng(tracker_lat, tracker_lng);
-    mapOptions = {
-      zoom: 16,
-      center: tracker_latlng
-    }
+      $('#tracker_name').text(init_tracker_obj.username);
 
-    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+      tracker_latlng = new google.maps.LatLng(init_tracker_obj.lat, init_tracker_obj.lng);
+      mapOptions = {
+        zoom: 16,
+        center: tracker_latlng
+      }
 
-    tracking_marker = new google.maps.Marker({
-      position: tracker_latlng,
-      title: 'Tracker'
+      map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+      tracking_marker = new google.maps.Marker({
+        position: tracker_latlng,
+        title: init_tracker_obj.username,
+        icon: 'http://project107.net/geo-ninja/img/marker.png'
+      });
+      tracking_marker.setMap(map);
+
+      tracker_int = setInterval(function(){
+        pollTracker(tracker_id);
+      }, 5000);
+
+      // Hide form elements and show nothing but sts div
+      $('#identity-frm').hide();
+      $('#share-frm').hide();
+      $('#sts').html('Waiting for more data...').slideDown();
     });
-    tracking_marker.setMap(map);
-
-    tracker_int = setInterval(function(){
-      pollTracker(tracker_id);
-    }, 5000);
-
   }
   else{
     // MY POSITION - NO TRACKER
@@ -78,25 +84,14 @@ function app_init(){
     };
     navigator.geolocation.getCurrentPosition(showCurrentUserPosition, errorHandler, options);
   }
-
-  // Mostly for testing
-  /* 
-  console.log('should set in 5 secs');
-  new_lat = 48.858899;
-  new_lng = 2.296926;
-  var timer = setTimeout(function(){
-    moveMarker(new_lat, new_lng)
-  }, 5000);
-  */
 }
-
 // END app_init
-
 
 // Called from app_init if nobody to track
 function showCurrentUserPosition(pos){
   my_lat = pos.coords.latitude;
   my_lng = pos.coords.longitude;
+  my_acc = pos.coords.accuracy;
 
   my_latlng = new google.maps.LatLng(my_lat, my_lng);
     mapOptions = {
@@ -113,43 +108,30 @@ function showCurrentUserPosition(pos){
     my_marker.setMap(map);
 }
 
-
-
 // For polling the tracker's beacon from the db
 function pollTracker (tracker_id) {
-  $.get('ajax/poll_tracker.php', {session_key: tracker_id}, function(data){
+  salt = Math.floor(Math.random()*999999999999999);
+  $.get('ajax/poll_tracker.php?'+ salt, {session_key: tracker_id}, function(data){
     // success
-<<<<<<< HEAD
     console.log(data);
-=======
-
-    console.log(data);
-
->>>>>>> e483bd935f649a7ea8f067752993261577039cea
     tracker_obj = jQuery.parseJSON(data);
     moveMarker(tracking_marker, true, tracker_obj.lat, tracker_obj.lng);
-  });
-  
+    var accuracy = tracker_obj.accuracy;
+
+    if(accuracy >= 1000){
+     sts_msg = 'Accuracy  is awful. (' + accuracy +'m)';
+    }
+    else{
+      sts_msg = 'Accuracy ~' + accuracy +'m';  
+    }
+
+    sts_msg += ". <em>Last update @ " + tracker_obj.timestamp + "</em>";
+
+    $('#sts').html(sts_msg).show();
+  });  
 }
 
-
-// ```````` For sending out my tracked position to server ```````````
-
-function sendLocation(position){
-  // position obj holds the key...
-  var latitude = position.coords.latitude;
-  var longitude = position.coords.longitude;
-
-  // Keep updating the db with my coords
-  $.post('ajax/post_coords.php', {lat: latitude, lng: longitude, session_key: obj.session_key, user: username}, function(data){
-    // on success
-    $('#sts').removeClass("success").html('Position sent ok.').slideDown(200).delay(2000).slideUp(100);
-    moveMarker(my_marker, true, latitude, longitude);
-  });
-
-}
-
-// Fired after button clicked
+// Fired after share button clicked
 function shareLocation(){
   // Get email to send to
   recip = document.getElementById('recip').value;
@@ -158,18 +140,16 @@ function shareLocation(){
   $('#share-frm').slideUp();
   $('#sts').addClass('success').html('Invite sent!').slideDown(200).delay(2000).slideUp(200);
   // Send first set of datapoints to server
-  $.post('ajax/share_location.php', {lat: my_lat, lng: my_lng, user: username, recip: recip}, function(data){
+  $.post('ajax/share_location.php', {lat: my_lat, lng: my_lng, user: username, recip: recip, acc: my_acc}, function(data){
     // on success, fire the watcher which will trigger the updater
     // console.log(data);
     obj = jQuery.parseJSON(data);
     // console.log(obj);
     getLocationUpdate();
   });
-
-
 }
 
-
+// Main function to init watchPosition
 function getLocationUpdate(){
    if(navigator.geolocation){
       // timeout at 60000 milliseconds (60 seconds)
@@ -184,22 +164,32 @@ function getLocationUpdate(){
    }
 }
 
+// Sending out my tracked position to server
+function sendLocation(position){
+  // position obj holds the key...
+  var latitude = position.coords.latitude;
+  var longitude = position.coords.longitude;
+  var accuracy = position.coords.accuracy;
 
-function setName(){
-  $('#identity-frm').slideUp(200);
-  $('#share-frm').slideDown(200);
-  username = $('#username').val();
-  $('#tracker_name').html(username + ' (you)');
+  if(accuracy >= 1000){
+    sts_msg = 'Position sent ok. Accuracy is awful. (' + accuracy +'m)';
+  }
+  else{
+    sts_msg = 'Position sent ok. Accuracy ~' + accuracy +'m';  
+  }
+  // Keep updating the db with my coords
+  $.post('ajax/post_coords.php', {lat: latitude, lng: longitude, session_key: obj.session_key, user: username, accuracy: accuracy}, function(data){
+    // on success
+    $('#sts').removeClass("success").html(sts_msg).slideDown(200).delay(5000).slideUp(100);
+    moveMarker(my_marker, true, latitude, longitude);
+  });
+
 }
-
-
 </script>
 </head>
 <html>
 <body onload="app_init()">
-
 <div id="wrapper">
-
 
   <div id="map-canvas">Loading map...</div>
   <div class="tracking">
@@ -220,8 +210,6 @@ function setName(){
   </div>
 
 </div>
-
-
 <script type="text/javascript" src="js/app.js"></script>
 </body>
 </html>

@@ -1,18 +1,20 @@
 // Utility funcs
 
-
+// Setting name on form
+function setName(){
+  $('#identity-frm').slideUp(200);
+  $('#share-frm').slideDown(200);
+  username = $('#username').val();
+  $('#tracker_name').html(username + ' (you)');
+}
 
 // Moving marker and panning to positon
 function moveMarker(marker, pan, lat, lng) {
-  console.log('moving...');
-  
   marker.setPosition( new google.maps.LatLng( lat, lng) );
   if(pan){
     map.panTo( new google.maps.LatLng( lat, lng) );
   }
-
   console.log('moved to: lat = ' + lat + " / lng = " + lng);
-  console.log('...done.');
 };
 
 
@@ -40,7 +42,6 @@ function errorHandler(err) {
     alert("Error: Position is unavailable!");
   }
 }
-
 
 // Get query string vars
 function getQueryVariable(variable){
