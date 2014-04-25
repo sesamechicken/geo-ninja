@@ -23,7 +23,7 @@ var poll_interval = 5000;
 
 function app_init(){
 
-  tracker_id = getQueryVariable('id');
+
 /*
   // Hardcode for testing
   tracker_lat = 48.858093;
@@ -32,7 +32,10 @@ function app_init(){
 */
 
   // IF TRACKER, OTHERWISE MY POSITION
-  if(tracker_id > 0){
+  if( getQueryVariable('id')){
+    tracker_id = getQueryVariable('id');
+    console.log('tracker_id: ' + tracker_id);
+
     // Grab the actual most-recent data per session ID
     $.get('ajax/poll_tracker.php', {session_key: tracker_id}, function(data){
       // success      
