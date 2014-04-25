@@ -32,7 +32,7 @@ function app_init(){
 */
 
   // IF TRACKER, OTHERWISE MY POSITION
-  if(tracker_id){
+  if(tracker_id > 0){
     // Grab the actual most-recent data per session ID
     $.get('ajax/poll_tracker.php', {session_key: tracker_id}, function(data){
       // success      
