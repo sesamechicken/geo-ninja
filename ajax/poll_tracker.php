@@ -23,5 +23,4 @@ if(isset($_GET['session_key'])){
 	echo '{"lat": "'. $lat .'", "lng": "'. $lng .'", "session_key": "'. $session_key .'", "accuracy": "'. $accuracy . '", "timestamp": "'. $timestamp .'", "username": "'. $username .'"}';
 }
 
-
 ?>
