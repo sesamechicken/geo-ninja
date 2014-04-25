@@ -23,8 +23,6 @@ if(isset($_POST['user'])){
 	$sql = "INSERT INTO positions (ninja_username, ninja_lat, ninja_lng, ninja_accuracy, ninja_session_key) VALUES ('$user', '$lat', '$lng', '$accuracy', '$session_key')";
 	$result = mysql_query($sql) or die(mysql_error());
 
-	//$link = "http://www.project107.net/geo-ninja/?lat=". $lat ."&lng=". $lng ."&user=". $encoded_user ."&id=". $session_key;
-
 	$link = "http://www.project107.net/geo-ninja/?id=". $session_key;
 
 	$msg = "<img src='http://project107.net/geo-ninja/img/marker.png' alt='geo-ninja' /> <h1>geo-ninja tracking</h1> \n".
@@ -43,6 +41,5 @@ if(isset($_POST['user'])){
 	echo '{"session_key": "'. $session_key .'"}';
 
 }
-
 
 ?>
