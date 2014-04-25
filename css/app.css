@@ -18,6 +18,7 @@ body {
   opacity: .89;
   width: 100%;
   text-align: center;
+  height: 1em;
 }
 .tracking{ 
   background-color: #0066FF; 
@@ -42,4 +43,12 @@ input[type=email], input[type=text]{
 }
 button {
   padding: 0.5em;
+}
+.beacon-icon{
+  height: 12px;
+  width: 12px;
+  background-color: #0066FF;
+  border-radius: 100%;
+  float: left;
+  margin-left: 0.5em;
 }
