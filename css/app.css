@@ -18,7 +18,7 @@ body {
   opacity: .89;
   width: 100%;
   text-align: center;
-  height: 1em;
+  min-height: 1em;
 }
 .tracking{ 
   background-color: #0066FF; 
@@ -52,3 +52,4 @@ button {
   float: left;
   margin-left: 0.5em;
 }
+.clear{ clear: both;}
