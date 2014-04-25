@@ -19,6 +19,8 @@ var tracker_user = "";
 var tracker_id;
 var tracker_int;
 
+var poll_interval = 5000;
+
 function app_init(){
 
   tracker_id = getQueryVariable('id');
@@ -55,7 +57,7 @@ function app_init(){
 
       tracker_int = setInterval(function(){
         pollTracker(tracker_id);
-      }, 5000);
+      }, poll_interval);
 
       // Hide form elements and show nothing but sts div
       $('#identity-frm').hide();
@@ -100,6 +102,8 @@ function showCurrentUserPosition(pos){
 // For polling the tracker's beacon from the db
 function pollTracker (tracker_id) {
   var salt = Math.floor(Math.random()*999999999999999);
+  var beacon_icon = '<div class="beacon-icon"></div>';
+
   $.get('ajax/poll_tracker.php?'+ salt, {session_key: tracker_id}, function(data){
     // success
     console.log(data);
@@ -114,9 +118,10 @@ function pollTracker (tracker_id) {
       sts_msg = 'Accuracy ~' + accuracy +'m';  
     }
 
-    sts_msg += ". <em>Last update @ " + tracker_obj.timestamp + "</em>";
+    sts_msg += ". <em>Last update @ " + tracker_obj.timestamp + "</em>" + beacon_icon;
 
     $('#sts').html(sts_msg).show();
+    $('.beacon-icon').show().fadeOut();   
   });  
 }
 
